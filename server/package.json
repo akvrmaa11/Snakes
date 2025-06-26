@@ -1,0 +1,24 @@
+{
+  "name": "secret-chat-app",
+  "version": "1.0.0",
+  "description": "A secret chat application with a hidden snake game password.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "chat",
+    "websocket",
+    "mongodb",
+    "secret",
+    "snake game",
+    "node.js"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "mongodb": "^6.8.0",
+    "socket.io": "^4.7.5"
+  }
+}
