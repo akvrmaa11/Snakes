@@ -2,48 +2,48 @@ body {
     font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* Updated for higher chat position */
     min-height: 100vh;
     margin: 0;
-    background-color: #f0f2f5; /* हल्का बैकग्राउंड */
-    overflow: hidden; /* स्क्रोलबार छुपाएं */
+    background-color: #f0f2f5; /* Light background */
+    overflow: hidden; /* Hide scrollbars */
 }
 
-/* --- गेम कंटेनर स्टाइल --- */
+/* --- Game Container Styles --- */
 #game-container {
-    background-color: #2c3e50; /* गेम का गहरा बैकग्राउंड */
+    background-color: #2c3e50; /* Dark background for game */
     color: #ecf0f1;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     text-align: center;
     padding: 20px;
     transition: opacity 0.5s ease-in-out;
-    width: 90%; /* रेस्पॉन्सिव चौड़ाई */
-    max-width: 500px; /* बड़ी स्क्रीन पर कटने से बचाएं */
+    width: 90%; /* Responsive width */
+    max-width: 500px; /* Prevent cut-off on larger screens */
 }
 
-#game-container h1 { /* यह हेडर अब मौजूद है लेकिन स्पेस लेने के लिए अदृश्य है */
-    color: transparent; /* टेक्स्ट को अदृश्य बनाएं */
-    margin-bottom: 8px;
-    font-size: 1.0em;
-    text-shadow: none; /* टेक्स्ट अदृश्य होने के कारण टेक्स्ट शैडो हटा दें */
-    height: auto; /* अपनी प्राकृतिक ऊंचाई लेने दें */
-    padding: 0; /* कोई अतिरिक्त पैडिंग नहीं */
+#game-container h1 { /* This header is present but invisible to take up space */
+    color: transparent; /* Make text invisible */
+    margin-bottom: 15px;
+    font-size: 2.5em;
+    text-shadow: none; /* Remove text shadow as text is invisible */
+    height: auto; /* Allow it to take its natural height */
+    padding: 0; /* No extra padding */
 }
 
 canvas {
-    background-color: #000; /* खेलने लायक गेम एरिया का काला बैकग्राउंड */
+    background-color: #000; /* Black background for playable game area */
     border: 2px solid #27ae60;
     display: block;
     margin: 20px auto;
-    width: 100%; /* अपने कंटेनर के भीतर कैनवस को रेस्पॉन्सिव बनाएं (जैसे 500px) */
-    height: auto; /* अनुपात बनाए रखें */
-    aspect-ratio: 1 / 1; /* इसे चौकोर रखें */
-    /* आंतरिक रिज़ॉल्यूशन 800x800 है लेकिन यह कंटेनर की अधिकतम चौड़ाई (जैसे 500px) का 100% पर प्रदर्शित होता है */
-    /* यह एक छोटे डिस्प्ले एरिया में अधिक पिक्सेल खींचकर "HD" प्रभाव पैदा करता है */
+    width: 100%; /* Make canvas responsive within its container (e.g., 500px) */
+    height: auto; /* Maintain aspect ratio */
+    aspect-ratio: 1 / 1; /* Keep it square */
+    /* The internal resolution is 800x800 but it's displayed at 100% of container max-width (e.g., 500px) */
+    /* This creates the "HD" effect by drawing more pixels in a smaller display area */
 }
 
-/* नए गेम कंट्रोल */
+/* Game Controls (Snake) */
 .game-controls {
     display: flex;
     flex-direction: column;
@@ -52,13 +52,13 @@ canvas {
 }
 
 .game-arrow-btn {
-    background-color: #3498db; /* बटनों के लिए नीला */
+    background-color: #3498db; /* Blue for buttons */
     color: white;
     border: none;
     padding: 15px 25px;
     margin: 5px;
     border-radius: 5px;
-    font-size: 1.5em; /* बड़े तीर */
+    font-size: 1.5em; /* Larger arrows */
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
     min-width: 80px;
@@ -80,14 +80,14 @@ canvas {
     width: 100%;
 }
 
-/* पासवर्ड इनपुट एरिया */
+/* Password Input Area */
 .password-area {
     margin-top: 30px;
     display: flex;
-    flex-wrap: wrap; /* छोटी स्क्रीन पर रैपिंग की अनुमति दें */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
     justify-content: center;
     align-items: center;
-    gap: 10px; /* इनपुट और बटन के बीच गैप */
+    gap: 10px; /* Space between input and button */
 }
 
 #game-id-input {
@@ -96,13 +96,13 @@ canvas {
     border-radius: 5px;
     font-size: 1.1em;
     width: 200px;
-    max-width: 50%; /* रेस्पॉन्सिव चौड़ाई */
+    max-width: 70%; /* Responsive width */
     background-color: #ecf0f1;
     color: #2c3e50;
 }
 
 #join-btn {
-    background-color: #e74c3c; /* शामिल हों बटन के लिए लाल */
+    background-color: #e74c3c; /* Red for Join button */
     color: white;
     border: none;
     padding: 12px 25px;
@@ -122,7 +122,7 @@ canvas {
     margin-top: 20px;
 }
 
-/* --- चैट कंटेनर स्टाइल (व्हाट्सएप जैसा) --- */
+/* --- Chat Container Styles (WhatsApp-like) --- */
 #chat-container {
     display: flex;
     flex-direction: column;
@@ -137,28 +137,29 @@ canvas {
 }
 
 .chat-header {
-    background-color: #075e54; /* व्हाट्सएप हेडर हरा */
+    background-color: #075e54; /* WhatsApp header green */
     color: white;
-    padding: 15px 50px;
+    padding: 15px 20px;
     text-align: center;
     font-size: 1.2em;
     font-weight: bold;
-    display: flex; /* टाइटल और बटन को संरेखित करने के लिए जोड़ा गया */
-    justify-content: flex-end; /* बटन दाईं ओर होगा */
+    display: flex; /* Added for alignment of status and button */
+    justify-content: space-between; /* To space out status and button */
     align-items: center;
-    min-height: 50px; /* टाइटल न होने पर भी स्पेस सुनिश्चित करें */
+    min-height: 50px;
 }
 
-.chat-header h2 { /* यह स्टाइल अब प्रभावी रूप से हटा दिया गया है क्योंकि HTML से h2 चला गया है */
-    margin: 0;
-    flex-grow: 1; 
-    visibility: hidden; /* यदि आप संरेखण के लिए स्पेस रखना चाहते हैं तो h2 को छुपाएं */
-    height: 0; /* यदि पूरी तरह से चला गया है तो स्पेस हटा दें */
-    padding: 0; /* पैडिंग हटा दें */
+#status-indicator { /* New: Status Indicator */
+    font-size: 0.9em;
+    font-weight: normal;
+    color: #aaffaa; /* Light green for status text */
+    margin-right: auto; /* Pushes button to the right */
+    text-align: left; /* Align text to left */
+    flex-grow: 1; /* Allow it to take available space */
 }
 
 #delete-all-my-messages-btn {
-    background-color: #f44336; /* लाल */
+    background-color: #f44336; /* Red */
     color: white;
     border: none;
     padding: 8px 12px;
@@ -166,7 +167,7 @@ canvas {
     cursor: pointer;
     font-size: 0.85em;
     transition: background-color 0.2s;
-    white-space: nowrap; /* टेक्स्ट रैपिंग रोकें */
+    white-space: nowrap; /* Prevent text wrapping */
 }
 #delete-all-my-messages-btn:hover {
     background-color: #d32f2f;
@@ -175,24 +176,24 @@ canvas {
 
 .chat-messages {
     flex-grow: 1;
-    padding: 10px 10px;
+    padding: 10px 5px; /* Adjusted padding */
     overflow-y: auto;
-    background-color: #ece5dd; /* व्हाट्सएप बैकग्राउंड */
+    background-color: #ece5dd; /* WhatsApp background */
 }
 
 .message-bubble {
     display: flex;
     margin-bottom: 10px;
-    max-width: 100%;
-    position: relative; /* रिप्लाई और डिलीट बटनों के लिए */
+    max-width: 100%; /* Changed to 100% */
+    position: relative; /* For reply and delete buttons */
 }
 
 .message-content {
     padding: 8px 12px;
     border-radius: 10px;
     font-size: 0.95em;
-    word-wrap: break-word; /* लंबे शब्दों को तोड़ने के लिए सुनिश्चित करें (पुराने ब्राउज़र) */
-    overflow-wrap: break-word; /* बेहतर संगतता के लिए आधुनिक समतुल्य */
+    word-wrap: break-word; /* Ensure long words break (older browsers) */
+    overflow-wrap: break-word; /* Modern equivalent for better compatibility */
 }
 
 .message-bubble.sent {
@@ -200,7 +201,7 @@ canvas {
 }
 
 .message-bubble.sent .message-content {
-    background-color: #dcf8c6; /* भेजा गया संदेश हरा */
+    background-color: #dcf8c6; /* Sent message green */
     align-self: flex-end;
 }
 
@@ -209,7 +210,7 @@ canvas {
 }
 
 .message-bubble.received .message-content {
-    background-color: #fff; /* प्राप्त संदेश सफेद */
+    background-color: #fff; /* Received message white */
     border: 1px solid #e0e0e0;
     align-self: flex-start;
 }
@@ -221,17 +222,17 @@ canvas {
     text-align: right;
 }
 
-/* डिलीट किए गए संदेश स्टाइल */
+/* Deleted message style */
 .message-bubble.deleted .message-content {
     font-style: italic;
     color: #888;
     background-color: #e0e0e0;
 }
 .message-bubble.deleted .message-content::before {
-    content: "🚫 "; /* डिलीट के लिए इमोजी */
+    content: "🚫 "; /* Emoji for deleted */
 }
 
-/* रिप्लाई मैसेज स्टाइल */
+/* Reply Message Style */
 .reply-quote {
     background-color: rgba(0, 0, 0, 0.05);
     border-left: 4px solid #075e54;
@@ -245,7 +246,7 @@ canvas {
     text-overflow: ellipsis;
 }
 
-/* कॉन्टेक्स्ट मेनू (रिप्लाई/डिलीट) */
+/* Context Menu for Reply/Delete */
 .message-context-menu {
     position: absolute;
     background-color: white;
@@ -253,9 +254,9 @@ canvas {
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     z-index: 10;
-    display: none; /* डिफ़ॉल्ट रूप से छुपा हुआ */
+    display: none; /* Hidden by default */
     top: 0;
-    right: 0; /* संरेखण के लिए समायोजित करें */
+    right: 0; /* Adjust as needed for alignment */
 }
 
 .message-context-menu button {
@@ -276,14 +277,14 @@ canvas {
 
 .chat-input-area {
     display: flex;
-    flex-direction: column; /* रिप्लाई इनपुट के ऊपर */
+    flex-direction: column; /* Reply info above input */
     padding: 10px;
     border-top: 1px solid #ddd;
     background-color: #f0f2f5;
 }
 
 #reply-info {
-    background-color: #e6f7ff; /* रिप्लाई जानकारी के लिए हल्का नीला बैकग्राउंड */
+    background-color: #e6f7ff; /* Light blue background for reply info */
     border-left: 4px solid #007bff;
     padding: 8px 10px;
     margin-bottom: 5px;
@@ -315,7 +316,16 @@ canvas {
     color: #000;
 }
 
-.message-input-row { /* यह अब इनपुट और सेंड बटन को रखता है */
+#typing-indicator { /* New: Typing Indicator */
+    font-size: 0.85em;
+    color: #555;
+    margin-bottom: 5px;
+    padding-left: 5px; /* Align with input */
+    font-style: italic;
+}
+
+
+.message-input-row { /* This now holds the input and send button */
     display: flex;
     width: 100%;
 }
@@ -344,18 +354,18 @@ canvas {
     background-color: #128c7e;
 }
 
-/* यूटिलिटी क्लासेस */
+/* Utility Classes */
 .hidden {
-    display: none !important; /* flex/block को ओवरराइड करने के लिए !important का उपयोग करें */
+    display: none !important; /* Use !important to override flex/block */
     opacity: 0;
     pointer-events: none;
 }
 
 .active {
-    display: flex; /* चैट कंटेनर के लिए flex का उपयोग करें */
+    display: flex; /* Use flex for chat-container */
     opacity: 1;
     pointer-events: auto;
 }
-#game-container.active { /* गेम कंटेनर के लिए विशिष्ट */
+#game-container.active { /* Specific for game container */
     display: block;
 }
