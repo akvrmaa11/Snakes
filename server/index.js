@@ -1,207 +1,163 @@
 const express = require('express');
 const http = require('http');
-const socketIo = require('socket.io');
-const { MongoClient, ObjectId } = require('mongodb'); // Using native driver as in user's repo base
-const path = require('path'); // Path module needed for static files
-const { v4: uuidv4 } = require('uuid'); // New: For generating unique IDs (like for messages)
-
+const { Server } = require('socket.io');
+const { MongoClient, ObjectId } = require('mongodb'); // Import ObjectId for MongoDB queries
+const path = require('path'); // Path module to handle file paths correctly
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = new Server(server);
 
-// --- MongoDB Connection ---
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://amitdatabase:1234%40ami@amidetabase.n1a11qd.mongodb.net/?retryWrites=true&w=majority&appName=amidetabase';
-const DB_NAME = 'amidetabase';
-const COLLECTION_NAME = 'messages';
+// --- MongoDB Connection Configuration ---
+// IMPORTANT: For production, always use environment variables for sensitive information
+// like database URIs and passwords (e.g., process.env.MONGODB_URI).
+// Hardcoding is for development/testing purposes only.
+const MONGODB_URI = 'mongodb+srv://amitdatabase:1234%40ami@amidetabase.n1a11qd.mongodb.net/?retryWrites=true&w=majority&appName=amidetabase'; // <-- Tumhari MongoDB Atlas URI yahan hai
+const DB_NAME = 'amidetabase'; // Tumhare appName ke according database ka naam
+const COLLECTION_NAME = 'messages'; // Collection ka naam jahan messages store honge
 
-let db; // MongoDB database client instance
+let db; // MongoDB database object
 
 // Function to establish connection with MongoDB Atlas
 async function connectDB() {
     try {
         const client = new MongoClient(MONGODB_URI);
-        await client.connect();
-        db = client.db(DB_NAME);
-        console.log('MongoDB connected successfully');
+        await client.connect(); // Connect to the MongoDB cluster
+        db = client.db(DB_NAME); // Select the database
+        console.log('Connected to MongoDB');
 
         // Create an index on the 'timestamp' field for faster chat history retrieval
+        // This makes sorting and querying by time more efficient.
         await db.collection(COLLECTION_NAME).createIndex({ timestamp: 1 });
         console.log('MongoDB index on timestamp created/ensured.');
 
     } catch (error) {
         console.error('MongoDB connection error:', error);
-        process.exit(1); // Exit if DB connection fails
+        // If connection fails, log the error and exit the process
+        process.exit(1);
     }
 }
 
+// Serve static files from the 'public' directory
+// path.join(__dirname, '..', 'public') ensures that the 'public' folder is
+// correctly located one level up from the 'server' directory where index.js resides.
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// --- Online Status & Typing Indicator Variables (Server-side) ---
-let connectedSockets = {}; // { socket.id: USER_ID } - Tracks all active socket connections
-let typingUsers = {}; // { USER_ID: true } - Tracks unique users who are currently typing
-
-// Helper function to update unique online users and broadcast count
-function updateOnlineStatusAndBroadcast() {
-    const uniqueOnlineUserIds = new Set(Object.values(connectedSockets)); // Get unique USER_IDs from all connected sockets
-    const count = uniqueOnlineUserIds.size;
-    console.log(`Server: Broadcasting online users count: ${count}`);
-    io.emit('onlineUsersCount', count); // Emit to all clients
-}
-
 // --- Socket.IO Connection and Event Handlers ---
+// This handles real-time communication between the server and connected clients
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // New: Handle user coming online (when they enter the chat)
-    // This event is emitted by the client after successful password entry.
-    socket.on('userOnline', (userId) => {
-        if (!userId) { // Basic validation
-            console.warn(`Server: userOnline event received with no userId from socket ${socket.id}`);
-            return;
-        }
-        connectedSockets[socket.id] = userId; // Map socket to USER_ID
-        console.log(`Server: Socket ${socket.id} mapped to USER_ID: ${userId}`);
-        updateOnlineStatusAndBroadcast(); // Update and broadcast count
-        
-        // Also, inform new connecting user about current typing users (if any)
-        if (Object.keys(typingUsers).length > 0) {
-            // Send 'typing' event for any user currently typing (excluding self)
-            const typers = Object.keys(typingUsers).filter(typerId => typerId !== userId);
-            if (typers.length > 0) {
-                socket.emit('typing', typers[0]); // Sending first typer ID as a generic "someone typing"
-            }
-        }
-    });
-
-    // Handle user disconnecting
-    socket.on('disconnect', () => {
-        console.log(`User disconnected: ${socket.id}`);
-        // Find the userId associated with this socket and remove them
-        const disconnectedUserId = connectedSockets[socket.id];
-        if (disconnectedUserId) {
-            delete connectedSockets[socket.id];
-            // Also remove from typing users if they disconnect suddenly (without sending stoppedTyping)
-            if (typingUsers[disconnectedUserId]) {
-                delete typingUsers[disconnectedUserId];
-                socket.broadcast.emit('stoppedTyping', disconnectedUserId); // Inform others
-                console.log(`Server: User ${disconnectedUserId} stopped typing due to disconnect.`);
-            }
-            updateOnlineStatusAndBroadcast(); // Update and broadcast count
-            // New: Broadcast user offline status to others
-            socket.broadcast.emit('userOffline', disconnectedUserId); // Inform others that this specific user is offline
-        }
-    });
-
-    // Handle new messages
-    socket.on('sendMessage', async (msgData) => {
-        console.log(`Server: Received message from ${msgData.senderId}: "${msgData.content}"`); // Debug log
-        try {
-            // Generate a unique ID for the message using uuidv4
-            const messageId = uuidv4();
-            const messageToSave = {
-                _id: messageId, // Assign generated UUID
-                senderId: msgData.senderId,
-                content: msgData.content,
-                timestamp: new Date(),
-                replyToMessageId: msgData.replyToMessageId || null,
-                isDeleted: false
-            };
-
-            // Insert message into MongoDB
-            await db.collection(COLLECTION_NAME).insertOne(messageToSave);
-            
-            // Stop typing status for this user after message is sent
-            if (typingUsers[msgData.senderId]) {
-                delete typingUsers[msgData.senderId];
-                socket.broadcast.emit('stoppedTyping', msgData.senderId); // Inform others
-                console.log(`Server: User ${msgData.senderId} stopped typing after sending message.`);
-            }
-
-            io.emit('newMessage', messageToSave); // Broadcast to all connected clients
-            console.log(`Server: Broadcasted new message with ID: ${messageToSave._id}`);
-        } catch (error) {
-            console.error('Error saving message:', error);
-        }
-    });
-
-    // Handle request for chat history
+    // Event listener for client requests to fetch chat history
     socket.on('requestChatHistory', async (userId) => {
-        console.log(`Server: Requesting chat history for user ${userId}`); // Debug log
         try {
-            // Only fetch messages that are NOT marked as deleted
-            const history = await db.collection(COLLECTION_NAME).find({ isDeleted: false }).sort({ timestamp: 1 }).toArray();
-            console.log(`Server: Sending chat history to user ${userId}. History count: ${history.length}`);
-            socket.emit('chatHistory', history);
+            // Fetch only messages that have NOT been marked as deleted (isDeleted: false)
+            // Messages are sorted by timestamp in ascending order to maintain chat flow.
+            const messages = await db.collection(COLLECTION_NAME)
+                                    .find({ isDeleted: false }) // <-- Only fetch non-deleted messages
+                                    .sort({ timestamp: 1 })
+                                    .toArray();
+            socket.emit('chatHistory', messages); // Send the fetched history back to the requesting client
         } catch (error) {
             console.error('Error fetching chat history:', error);
         }
     });
 
-    // Handle message deletion
-    socket.on('deleteMessage', async (messageId, userId) => {
-        console.log(`Server: Received delete request for message ${messageId} from user ${userId}`); // Debug log
+    // Event listener for clients sending new messages
+    socket.on('sendMessage', async (msg) => {
         try {
-            // Convert string messageId to ObjectId for MongoDB query
-            const messageObjectId = new ObjectId(messageId); 
+            // Create a new message object with necessary details
+            const newMessage = {
+                senderId: msg.senderId,      // ID of the user sending the message
+                content: msg.content,        // The actual message text
+                timestamp: new Date(),       // Server-side timestamp for accuracy
+                isDeleted: false,            // Flag to mark if message is deleted (default false)
+                replyToMessageId: msg.replyToMessageId || null // ID of the message this is a reply to, if any
+            };
+            // Insert the new message into the MongoDB collection
+            const result = await db.collection(COLLECTION_NAME).insertOne(newMessage);
+            // Add the MongoDB-generated _id to the message object before broadcasting
+            newMessage._id = result.insertedId;
+            // Broadcast the new message to all connected clients in real-time
+            io.emit('newMessage', newMessage);
+        } catch (error) {
+            console.error('Error saving message:', error);
+        }
+    });
 
-            const message = await db.collection(COLLECTION_NAME).findOne({ _id: messageObjectId });
-            if (message && message.senderId === userId) { // Only allow sender to delete
-                const result = await db.collection(COLLECTION_NAME).updateOne(
-                    { _id: messageObjectId },
-                    { $set: { isDeleted: true, content: 'This message was deleted.' } }
-                );
-                if (result.modifiedCount > 0) {
-                    const updatedMessage = await db.collection(COLLECTION_NAME).findOne({ _id: messageObjectId });
-                    io.emit('messageUpdated', updatedMessage); // Inform all clients
-                    console.log(`Server: Message ${messageId} soft-deleted by ${userId}`);
-                }
-            } else {
-                console.warn(`Server: Unauthorized delete attempt for message ${messageId} by ${userId}. Sender mismatch or message not found.`);
+    // Event listener for clients requesting to delete a message
+    // Now also receives the userId from the client for verification
+    socket.on('deleteMessage', async (messageId, userId) => {
+        try {
+            // Ensure messageId valid ObjectId hai
+            if (!ObjectId.isValid(messageId)) {
+                console.warn(`Invalid messageId for deletion: ${messageId}`);
+                return;
+            }
+
+            // Fetch the message from DB to verify sender
+            const messageToDelete = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(messageId) });
+
+            if (!messageToDelete) {
+                console.warn(`Message with ID ${messageId} not found.`);
+                return;
+            }
+
+            // IMPORTANT SECURITY CHECK: Only allow sender to delete their own message
+            // This prevents a user from deleting messages sent by others.
+            if (messageToDelete.senderId !== userId) {
+                console.warn(`User ${userId} attempted to delete message ID ${messageId} not sent by them.`);
+                socket.emit('deleteError', 'You can only delete your own messages.');
+                return;
+            }
+
+            const result = await db.collection(COLLECTION_NAME).updateOne(
+                { _id: new ObjectId(messageId) },
+                { $set: { isDeleted: true, content: 'This message was deleted.' } }
+            );
+            if (result.modifiedCount > 0) {
+                const updatedMessage = await db.collection(COLLECTION_NAME).findOne({ _id: new ObjectId(messageId) });
+                io.emit('messageUpdated', updatedMessage); // Broadcast update to all clients
             }
         } catch (error) {
             console.error('Error deleting message:', error);
         }
     });
 
-    // Handle global chat history deletion
-    socket.on('deleteAllMessagesGlobal', async () => {
-        console.log("Server: Received request to delete all messages globally."); // Debug log
+    // New Event Listener: Delete all messages in the entire chat globally
+    // This handler removes the senderId filter from updateMany.
+    socket.on('deleteAllMessagesGlobal', async () => { // Event name changed, no userId parameter needed
         try {
-            // Update all messages to be deleted
+            // Update many documents: set isDeleted to true for ALL messages in the collection
             const result = await db.collection(COLLECTION_NAME).updateMany(
-                {}, // Empty filter means update all documents
-                { $set: { isDeleted: true, content: 'This chat history was cleared.' } }
+                {}, // <-- Filter removed: now applies to all documents
+                { $set: { isDeleted: true, content: 'This chat history was cleared.' } } // Optional: custom message
             );
-            console.log(`Server: All messages globally soft-deleted. Count: ${result.modifiedCount}`);
-            io.emit('chatHistory', []); // Send empty history to all clients to clear their view
+            console.log(`Global chat history cleared. Deleted ${result.modifiedCount} messages.`);
+
+            // After deletion, re-fetch and broadcast updated history to all clients
+            const updatedHistory = await db.collection(COLLECTION_NAME)
+                                            .find({ isDeleted: false }) // Fetch only non-deleted messages after mass delete
+                                            .sort({ timestamp: 1 })
+                                            .toArray();
+            io.emit('chatHistory', updatedHistory); // Re-emit full chat history to refresh all clients
+
         } catch (error) {
-            console.error('Error deleting all messages:', error);
+            console.error('Error deleting all messages globally:', error);
         }
     });
 
-    // Handle typing indicator events
-    socket.on('typing', (userId) => {
-        if (userId && !typingUsers[userId]) { // Add to typing list only if not already there
-            typingUsers[userId] = true;
-            // Broadcast to all OTHER clients (excluding the sender themselves)
-            socket.broadcast.emit('typing', userId);
-            console.log(`User ${userId} is typing.`);
-        }
-    });
-
-    socket.on('stoppedTyping', (userId) => {
-        if (userId && typingUsers[userId]) { // Remove from typing list only if they were marked as typing
-            delete typingUsers[userId];
-            // Broadcast to all OTHER clients (excluding the sender themselves)
-            socket.broadcast.emit('stoppedTyping', userId);
-            console.log(`User ${userId} stopped typing.`);
-        }
+    // Event listener for client disconnections
+    socket.on('disconnect', () => {
+        console.log(`User disconnected: ${socket.id}`);
     });
 });
 
+// --- Server Startup ---
+// Listen on the port provided by the environment (e.g., Render) or default to 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
+    // Connect to MongoDB before starting to listen for client connections
     await connectDB();
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
