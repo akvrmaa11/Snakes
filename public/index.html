@@ -10,31 +10,28 @@
     <div id="game-container" class="active">
         <h1>SNAKE ARCADE</h1> 
         
-        <div id="snake-game-area" class="game-mode-area active-game">
-            <canvas id="gameCanvas" width="800" height="800"></canvas>
-            
-            <div class="game-controls">
-                <button id="game-up-btn" class="game-arrow-btn">↑</button>
-                <div class="game-horizontal-controls">
-                    <button id="game-left-btn" class="game-arrow-btn">←</button>
-                    <button id="game-down-btn" class="game-arrow-btn">↓</button>
-                    <button id="game-right-btn" class="game-arrow-btn">→</button>
-                </div>
+        <canvas id="gameCanvas" width="800" height="800"></canvas>
+        
+        <div class="game-controls">
+            <button id="game-up-btn" class="game-arrow-btn">↑</button>
+            <div class="game-horizontal-controls">
+                <button id="game-left-btn" class="game-arrow-btn">←</button>
+                <button id="game-down-btn" class="game-arrow-btn">↓</button>
+                <button id="game-right-btn" class="game-arrow-btn">→</button>
             </div>
         </div>
 
         <div class="password-area">
-            <input type="text" id="game-id-input" placeholder="Create Game ID..." autocomplete="off" autocorrect="off">
+            <input type="text" id="game-id-input" placeholder="Create Game id..." autocomplete="off" autocorrect="off">
             <button id="join-btn">Join</button>
         </div>
 
-        <p class="instructions">Play the game!</p>
+        <p class="instructions"></p>
     </div>
 
     <div id="chat-container" class="hidden">
         <div class="chat-header">
-            <span id="status-indicator">Offline</span> 
-            <button id="delete-all-my-messages-btn">Delete Entire Chat History</button>
+            <button id="delete-all-my-messages-btn">Delete Entire History</button>
         </div>
         <div class="chat-messages" id="chat-messages">
             </div>
@@ -43,7 +40,6 @@
                 <span id="replying-to-text"></span>
                 <button id="cancel-reply-btn">✖</button>
             </div>
-            <div id="typing-indicator" class="hidden">Someone is typing...</div> 
             <div class="message-input-row">
                 <input type="text" id="message-input" placeholder="Type a message...">
                 <button id="send-btn">Send</button>
@@ -55,3 +51,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script> <script src="script.js"></script>
 </body>
 </html>
+
+
+
